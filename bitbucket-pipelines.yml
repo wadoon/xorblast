@@ -4,12 +4,10 @@
 # You can specify a custom docker image from Dockerhub as your build environment.
 # image: docker-image:tag
 
-image: gcc:5.2
+image: wadoon/cpp-env
 pipelines:
   default:
     - step:
         script:
-          - apt-get -qq update
-          - apt-get install -y libpng-dev z3
           - mkdir build && cd build && cmake .. && make 
-          - cd test && testall
+          - cd test 
