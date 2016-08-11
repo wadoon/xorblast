@@ -9,7 +9,7 @@ pipelines:
   default:
     - step:
         script:
-          - sudo apt-get -qq update
-          - sudo apt-get install -y libpng-dev z3
+          - apt-get -qq update
+          - apt-get install -y libpng-dev z3
           - mkdir build && cd build && cmake .. && make 
           - cd test && testall
