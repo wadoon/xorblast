@@ -285,7 +285,6 @@ void simplify() {
 
     //translate back into clausel form
     xor_clauses.clear();
-
     for (int row = 0; row < M->nrows; row++) {
         vector<int> clause;
 
@@ -307,7 +306,6 @@ void simplify() {
             }
         }
     }
-
     mzd_free(M);
 }
 
