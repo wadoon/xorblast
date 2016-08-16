@@ -19,6 +19,9 @@ ExternalProject_Add(extm4ri
 
 find_package(PNG)
 
+set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_C_FLAGS "-std=c99")
+
 include_directories("m4ri/")
 
 add_library(m4ri STATIC ${M4RI_FILES})

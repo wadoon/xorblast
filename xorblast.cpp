@@ -48,7 +48,9 @@ bool    verbose      = false;
 bool    write_output = false;
 string  output_file;
 string  input_file;
-bool    gauss        = true;
+bool gauss = true;
+bool smt_check = false;
+std::string smt_file;
 
 // -- Functions  ---------------------------------------------------------------
 
@@ -60,6 +62,7 @@ void print_usage() {
          << "Options:\n"
          << "  -v\tverbose output\n"
          << "  -g,-G\tenable or disable gauss elimination, default: enabled\n"
+         << "  -s FILE\tsmt check of gauss elimination"
          << "  -o\toutput file written\n"
          << "  -h\tthis help message\n"
          << "\n\n"
@@ -71,7 +74,7 @@ void print_usage() {
 
 void parse_cli(int argc, char* argv[]) {
     int c, option_index;
-    while((c = getopt(argc, argv, "hgGvo:")) != -1) {
+    while((c = getopt(argc, argv, "hgGvo:s:")) != -1) {
         switch(c) {
         case 'h':
             print_usage();
@@ -90,6 +93,11 @@ void parse_cli(int argc, char* argv[]) {
             write_output = true;
             output_file = optarg;
             if(verbose)  cout << "c output file: " << output_file << endl;
+            break;
+        case 's':
+            smt_check = true;
+            smt_file = optarg;
+            if(verbose)  cout << "c smt file: " << smt_file << endl;
             break;
         case '?':
             cout << "c Unkown option. exit" << endl;
@@ -225,28 +233,59 @@ void print_matrix(mzd_t* M) {
     }
 }
 
+void to_smt(stringstream& smt) {
+    smt << "(and ";
+    for(auto& clause : xor_clauses) {
+        if(clause.size() == 1) {
+            auto lit = clause.at(0);
+            if(lit < 0)
+                smt << "(not a" << abs(lit) <<  ") ";
+            else
+                smt << "a" << abs(lit) << " ";
+            continue;
+        }
+
+        smt << "(xor ";
+        for(auto& lit : clause) {
+            if(lit < 0)
+                smt << "(not a" << abs(lit) <<  ") ";
+            else
+                smt << "a" << lit << " ";
+        }
+        smt << ")" << endl;
+    }
+    smt << ")"<<endl;
+}
+
 void simplify() {
     intmap ind_to_pvar;
     intmap pvar_to_ind;
 
+    stringstream smt;
+    for(uint32_t var = 0; var <= nvars; var++)
+        smt << "(declare-fun a" << var << " () Bool)" << endl;
+
     // map variables to matrix indices
     unsigned int ind = 0;
-    for(auto& clause : xor_clauses){
+    for(auto& clause : xor_clauses) {
         for(auto& lit : clause) {
             unsigned int var = abs(lit);
             if(pvar_to_ind.find(var) == pvar_to_ind.end()) {
                 // assign
                 pvar_to_ind[var] = ind;
                 ind_to_pvar[ind] = var;
-
                 if(verbose) {
                     cout << "c " << ind << " <--> " << var << endl;
                 }
-
                 ind++;
             }
         }
     }
+
+
+    smt << "(assert (not (= " << endl;
+    to_smt(smt);
+
 
     // initialize the matrix, with rows and cols
     // one extra column for desired result [A; b]
@@ -255,26 +294,26 @@ void simplify() {
     // translate xor clauses into matrix
     int row = 0;
     for(auto& clause : xor_clauses){
-        for(auto& lit : clause) {
+	    for(auto& lit : clause) {
 
-            // every variable is an one in the matrix A[row, vti(var)] = 1
-            unsigned int var = abs(lit);
-            auto col = pvar_to_ind[var];
-            mzd_write_bit(M, row, col, 1);
-        }
+		    // every variable is an one in the matrix A[row, vti(var)] = 1
+		    unsigned int var = abs(lit);
+		    auto col = pvar_to_ind[var];
+		    mzd_write_bit(M, row, col, 1);
+	    }
 
-        // set last column to 1, if want an xor (positive first literal)
-        // otherwise it will keep 0 for equivalence.
-        if(clause[0] > 0) {
-            mzd_write_bit(M, row, M->ncols - 1, 1);
-        }
-
-        row++;
+	    // set last column to 1, if want an xor (positive
+	    // first literal) otherwise it will keep 0 for
+	    // equivalence.
+            if(clause[0] > 0) {
+                mzd_write_bit(M, row, M->ncols - 1, 1);
+	    }
+	    row++;
     }
 
     if(verbose) {
-        print_matrix(M);
-        cout << "c -------------" << endl;
+	    print_matrix(M);
+	    cout << "c -------------" << endl;
     }
 
     rci_t re = mzd_echelonize_naive(M, 1);
@@ -304,9 +343,24 @@ void simplify() {
                 for(auto& l : clause) cout << l << " ";
                 cout << "0" << endl;
             }
+        } else {
+            if(mzd_read_bit(M, row, M->ncols - 1) == 1) {
+                cout << "!!! XOR CONSTRAINTS CONTRADICT !!!"<< endl;
+                exit(42);
+            }
         }
     }
+
+    to_smt(smt);
+    smt << ")))\n(check-sat)\n(get-model)"<< endl;
     mzd_free(M);
+
+
+    if(smt_check) {
+        ofstream sf(smt_file);
+        sf << smt.str();
+        //        cout << smt.str();
+    }
 }
 
 void read_and_manipulate(const string& cnf) {
@@ -348,4 +402,5 @@ int main(int argc, char* argv[]) {
     } else {
         cout << cnf;
     }
+
 }

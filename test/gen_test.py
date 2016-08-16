@@ -9,7 +9,7 @@ seed(floor(pi*1000))
 
 def gen():
     vars     = randint(10,28);
-    clauses  = randint(1,100);
+    clauses  = randint(1,10);
     xclauses = randint(1,clauses);
 
     V = list(range(1,vars))
@@ -29,7 +29,7 @@ def gen():
             s[0] *= -1
         print('x',seq2str(s), '0')
 
-for i in range(1,10):
+for i in range(1,1000):
     with open("test_%03d.cnf" % i, 'w') as fp:
         sys.stdout = fp
         gen()
