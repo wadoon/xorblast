@@ -1,5 +1,7 @@
 language: cpp
 install: 
+  - sudo apt-get update -y
+  - sudo apt-get install libm4ri-dev
   - mkdir build
   - cd build && cmake .. && make -j 2
 script:
