@@ -1,0 +1,6 @@
+language: cpp
+install: 
+  - mkdir build
+  - cd build && cmake .. && make -j 2
+script:
+  - echo 1
