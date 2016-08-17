@@ -159,8 +159,8 @@ void read(const string& filename) {
     while(! input.eof() ) {
         input.get(c);
         if(c == '\n') {
-            input.get(c);
-            if(c == 'x') {
+            if(input.peek() == 'x') {
+                input.get(c);//consume x
                 parse_xor_clause(input);
             }
         }
