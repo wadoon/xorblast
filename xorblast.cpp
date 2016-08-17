@@ -187,6 +187,37 @@ int tseitin_xor(int a, int b, ostream& out) {
     return z;
 }
 
+void tseitin_xor_2(const vector<int>& xclause, ostream& output){
+    //CNF | (¬x∨¬y)∧(x∨y)
+}
+
+void tseitin_xor_3(const vector<int>& xclause, ostream& output){
+//CNF | (¬x∨¬y∨z)∧(¬x∨y∨¬z)∧(x∨¬y∨¬z)∧(x∨y∨z)
+}
+
+void tseitin_xor_4(const vector<int>& xclause, ostream& output){
+    //CNF | (¬a∨¬b∨¬c∨¬d)∧(¬a∨¬b∨c∨d)∧(¬a∨b∨¬c∨d)∧(¬a∨b∨c∨¬d)∧(a∨¬b∨¬c∨d)∧(a∨¬b∨c∨¬d)∧(a∨b∨¬c∨¬d)∧(a∨b∨c∨d)
+}
+
+void tseitin_xor_5(const vector<int>& xclause, ostream& output){
+    //CNF | (¬a∨¬b∨¬c∨¬d∨e)∧(¬a∨¬b∨¬c∨d∨¬e)∧(¬a∨¬b∨c∨¬d∨¬e)∧(¬a∨¬b∨c∨d∨e)∧(¬a∨b∨¬c∨¬d∨¬e)∧(¬a∨b∨¬c∨d∨e)∧(¬a∨b∨c∨¬d∨e)∧(¬a∨b∨c∨d∨¬e)∧(a∨¬b∨¬c∨¬d∨¬e)∧(a∨¬b∨¬c∨d∨e)∧(a∨¬b∨c∨¬d∨e)∧(a∨¬b∨c∨d∨¬e)∧(a∨b∨¬c∨¬d∨e)∧(a∨b∨¬c∨d∨¬e)∧(a∨b∨c∨¬d∨¬e)∧(a∨b∨c∨d∨e)
+
+}
+
+void tseitin_xor_6(const vector<int>& xclause, ostream& output){
+    //CNF | (¬a∨¬b∨¬c∨¬d∨¬e∨¬f)∧(¬a∨¬b∨¬c∨¬d∨e∨f)∧(¬a∨¬b∨¬c∨d∨¬e∨f)∧(¬a∨¬b∨¬c∨d∨e∨¬f)∧(¬a∨¬b∨c∨¬d∨¬e∨f)∧(¬a∨¬b∨c∨¬d∨e∨¬f)∧(¬a∨¬b∨c∨d∨¬e∨¬f)∧(¬a∨¬b∨c∨d∨e∨f)∧(¬a∨b∨¬c∨¬d∨¬e∨f)∧(¬a∨b∨¬c∨¬d∨e∨¬f)∧(¬a∨b∨¬c∨d∨¬e∨¬f)∧(¬a∨b∨¬c∨d∨e∨f)∧(¬a∨b∨c∨¬d∨¬e∨¬f)∧(¬a∨b∨c∨¬d∨e∨f)∧(¬a∨b∨c∨d∨¬e∨f)∧(¬a∨b∨c∨d∨e∨¬f)∧(a∨¬b∨¬c∨¬d∨¬e∨f)∧(a∨¬b∨¬c∨¬d∨e∨¬f)∧(a∨¬b∨¬c∨d∨¬e∨¬f)∧(a∨¬b∨¬c∨d∨e∨f)∧(a∨¬b∨c∨¬d∨¬e∨¬f)∧(a∨¬b∨c∨¬d∨e∨f)∧(a∨¬b∨c∨d∨¬e∨f)∧(a∨¬b∨c∨d∨e∨¬f)∧(a∨b∨¬c∨¬d∨¬e∨¬f)∧(a∨b∨¬c∨¬d∨e∨f)∧(a∨b∨¬c∨d∨¬e∨f)∧(a∨b∨¬c∨d∨e∨¬f)∧(a∨b∨c∨¬d∨¬e∨f)∧(a∨b∨c∨¬d∨e∨¬f)∧(a∨b∨c∨d∨¬e∨¬f)∧(a∨b∨c∨d∨e∨f)
+
+}
+
+/*
+void tseitin_xor_7(const vector<int>& xclause, ostream& output){
+    //CNF | (¬a∨¬b∨¬c∨¬d∨¬e∨¬f∨g)∧(¬a∨¬b∨¬c∨¬d∨¬e∨f∨¬g)∧(¬a∨¬b∨¬c∨¬d∨e∨¬f∨¬g)∧(¬a∨¬b∨¬c∨¬d∨e∨f∨g)∧(¬a∨¬b∨¬c∨d∨¬e∨¬f∨¬g)∧(¬a∨¬b∨¬c∨d∨¬e∨f∨g)∧(¬a∨¬b∨¬c∨d∨e∨¬f∨g)∧(¬a∨¬b∨¬c∨d∨e∨f∨¬g)∧(¬a∨¬b∨c∨¬d∨¬e∨¬f∨¬g)∧(¬a∨¬b∨c∨¬d∨¬e∨f∨g)∧(¬a∨¬b∨c∨¬d∨e∨¬f∨g)∧(¬a∨¬b∨c∨¬d∨e∨f∨¬g)∧(¬a∨¬b∨c∨d∨¬e∨¬f∨g)∧(¬a∨¬b∨c∨d∨¬e∨f∨¬g)∧(¬a∨¬b∨c∨d∨e∨¬f∨¬g)∧(¬a∨¬b∨c∨d∨e∨f∨g)∧(¬a∨b∨¬c∨¬d∨¬e∨¬f∨¬g)∧(¬a∨b∨¬c∨¬d∨¬e∨f∨g)∧(¬a∨b∨¬c∨¬d∨e∨¬f∨g)∧(¬a∨b∨¬c∨¬d∨e∨f∨¬g)∧(¬a∨b∨¬c∨d∨¬e∨¬f∨g)∧(¬a∨b∨¬c∨d∨¬e∨f∨¬g)∧(¬a∨b∨¬c∨d∨e∨¬f∨¬g)∧(¬a∨b∨¬c∨d∨e∨f∨g)∧(¬a∨b∨c∨¬d∨¬e∨¬f∨g)∧(¬a∨b∨c∨¬d∨¬e∨f∨¬g)∧(¬a∨b∨c∨¬d∨e∨¬f∨¬g)∧(¬a∨b∨c∨¬d∨e∨f∨g)∧(¬a∨b∨c∨d∨¬e∨¬f∨¬g)∧(¬a∨b∨c∨d∨¬e∨f∨g)∧(¬a∨b∨c∨d∨e∨¬f∨g)∧(¬a∨b∨c∨d∨e∨f∨¬g)∧(a∨¬b∨¬c∨¬d∨¬e∨¬f∨¬g)∧(a∨¬b∨¬c∨¬d∨¬e∨f∨g)∧(a∨¬b∨¬c∨¬d∨e∨¬f∨g)∧(a∨¬b∨¬c∨¬d∨e∨f∨¬g)∧(a∨¬b∨¬c∨d∨¬e∨¬f∨g)∧(a∨¬b∨¬c∨d∨¬e∨f∨¬g)∧(a∨¬b∨¬c∨d∨e∨¬f∨¬g)∧(a∨¬b∨¬c∨d∨e∨f∨g)∧(a∨¬b∨c∨¬d∨¬e∨¬f∨g)∧(a∨¬b∨c∨¬d∨¬e∨f∨¬g)∧(a∨¬b∨c∨¬d∨e∨¬f∨¬g)∧(a∨¬b∨c∨¬d∨e∨f∨g)∧(a∨¬b∨c∨d∨¬e∨¬f∨¬g)∧(a∨¬b∨c∨d∨¬e∨f∨g)∧(a∨¬b∨c∨d∨e∨¬f∨g)∧(a∨¬b∨c∨d∨e∨f∨¬g)∧(a∨b∨¬c∨¬d∨¬e∨¬f∨g)∧(a∨b∨¬c∨¬d∨¬e∨f∨¬g)∧(a∨b∨¬c∨¬d∨e∨¬f∨¬g)∧(a∨b∨¬c∨¬d∨e∨f∨g)∧(a∨b∨¬c∨d∨¬e∨¬f∨¬g)∧(a∨b∨¬c∨d∨¬e∨f∨g)∧(a∨b∨¬c∨d∨e∨¬f∨g)∧(a∨b∨¬c∨d∨e∨f∨¬g)∧(a∨b∨c∨¬d∨¬e∨¬f∨¬g)∧(a∨b∨c∨¬d∨¬e∨f∨g)∧(a∨b∨c∨¬d∨e∨¬f∨g)∧(a∨b∨c∨¬d∨e∨f∨¬g)∧(a∨b∨c∨d∨¬e∨¬f∨g)∧(a∨b∨c∨d∨¬e∨f∨¬g)∧(a∨b∨c∨d∨e∨¬f∨¬g)∧(a∨b∨c∨d∨e∨f∨g)
+
+}
+*/
+
+
+
 void tseitin_xor(const vector<int>& xclause,
                  ostream& output) {
 
@@ -195,13 +226,13 @@ void tseitin_xor(const vector<int>& xclause,
 
     auto a = *iter++;
     auto b = *iter++;
-    auto q = tseitin_xor(a, b, output);
+    auto q = tseitin_xor(abs(a), b, output);
 
     for(; iter != end; iter++) {
         q = tseitin_xor(q, *iter, output);
     }
 
-    output << q << " 0\n";
+    output << ((a<0)?-q:q) << " 0\n";
 }
 
 string recode() {
