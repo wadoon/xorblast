@@ -189,6 +189,7 @@ int tseitin_xor(int a, int b, ostream& out) {
 
 #include <assert.h>     /* assert */
 
+/*
 void tseitin_xor_2(const vector<int>& xclause, ostream& output){
     //CNF | (¬x∨¬y)∧(x∨y)
     assert(xclause.size() == 2);
@@ -359,7 +360,7 @@ void tseitin_xor_7(const vector<int>& xclause, ostream& output ) {
                       << a << " " << b << " " << c << " " << d << " " << e << " " << -f << " " << -g << " 0\n"
                       << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " 0\n";
               }
-
+*/
 
 //
 //
@@ -393,19 +394,18 @@ string recode() {
         case 1:
             output <<  xclause.at(0) << " 0\n";
             break;
-        case 2:
-            tseitin_xor_2(xclause, output);
-            break;
-        case 3:
-            tseitin_xor_3(xclause, output);
-            break;
-        case 4:
-            tseitin_xor_4(xclause, output);
-            break;
-        case 5:
-            tseitin_xor_5(xclause, output);
-            break;
-            break;
+            // case 2:
+            //     tseitin_xor_2(xclause, output);
+            //     break;
+            // case 3:
+            //     tseitin_xor_3(xclause, output);
+            //     break;
+            // case 4:
+            //     tseitin_xor_4(xclause, output);
+            //     break;
+            // case 5:
+            //     tseitin_xor_5(xclause, output);
+            //     break;
         default:
             tseitin_xor(xclause, output);
             equiv_flag = false;
