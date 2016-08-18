@@ -1,12 +1,15 @@
 language: cpp
 sudo: required
+dist: trusty
 compiler:
   - clang
   #- gcc
 before_install:
-  - wget -O a.deb http://ftp.de.debian.org/debian/pool/main/libm/libm4ri/libm4ri-dev_20140914-2_amd64.deb
-  - wget -O b.deb  http://ftp.at.debian.org/debian/pool/main/libm/libm4ri/libm4ri-0.0.20140914_20140914-2_amd64.deb
-  - sudo dpkg -i *.deb
+#  - wget -O a.deb http://ftp.de.debian.org/debian/pool/main/libm/libm4ri/libm4ri-dev_20140914-2_amd64.deb
+#  - wget -O b.deb  http://ftp.at.debian.org/debian/pool/main/libm/libm4ri/libm4ri-0.0.20140914_20140914-2_amd64.deb
+#  - sudo dpkg -i *.deb
+  - sudo apt-get update -qq
+  - sudo apt-get install libm4ri-dev
   - ls -lhtr /usr/include/m4ri/
   - cat /usr/include/m4ri/m4ri.h
 install:
