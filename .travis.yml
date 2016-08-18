@@ -13,6 +13,7 @@ before_install:
   - ls -lhtr /usr/include/m4ri/
   - cat /usr/include/m4ri/m4ri.h
 install:
-  - mkdir build && cd build && cmake .. && make
+  - echo 1
 script:
-  - cd test && testall
+  - mkdir build && cd build && cmake .. && make
+  # currently no test except compilation
