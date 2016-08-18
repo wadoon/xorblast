@@ -4,8 +4,9 @@ compiler:
   - clang
   #- gcc
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libm4ri-dev
+  - wget -O a.deb http://ftp.de.debian.org/debian/pool/main/libm/libm4ri/libm4ri-dev_20140914-2_amd64.deb
+  - wget -O b.deb  http://ftp.at.debian.org/debian/pool/main/libm/libm4ri/libm4ri-0.0.20140914_20140914-2_amd64.deb
+  - sudo dpkg -i *.deb
   - ls -lhtr /usr/include/m4ri/
   - cat /usr/include/m4ri/m4ri.h
 install:
