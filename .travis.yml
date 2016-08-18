@@ -3,8 +3,8 @@ compiler:
   - clang
   - gcc
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libpng-dev z3
+  - apt-get -qq update
+  - apt-get install -y libpng-dev z3
 install:
   - mkdir build && cd build && cmake .. && make 
 script:
