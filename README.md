@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/wadoon/xorblast.svg?token=RdS3fn8xbyWzA9yxUryU&branch=master)](https://travis-ci.com/wadoon/xorblast)
+[![Build Status](https://travis-ci.org/wadoon/xorblast.svg?token=RdS3fn8xbyWzA9yxUryU&branch=master)](https://travis-ci.com/wadoon/xorblast)
 
 xorblast
 ==========
