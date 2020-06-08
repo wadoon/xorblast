@@ -1,4 +1,4 @@
-/*
+/*******************************************************************************
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -11,7 +11,7 @@
 
   You should have received a copy of the GNU General Public License
   along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+********************************************************************************/
 
 #include <stdlib.h>
 #include <m4ri/m4ri.h>
@@ -22,17 +22,18 @@
 #include <sstream>
 #include <getopt.h>
 #include <unordered_map>
+#include <assert.h>
 
 using namespace std;
 
 typedef unordered_map<unsigned int, unsigned int> intmap;
 
 // -- GLOBALS ------------------------------------------------------------------
-const auto VERSION = "0.9-beta";
+const auto VERSION = "1.0";
 const auto AUTHOR  = "Alexander Weigl <weigl@kit.edu>";
 
 
-//!
+//! the catched xor clauses
 vector<vector<int>> xor_clauses;
 
 //! Number of variables
@@ -44,12 +45,12 @@ unsigned int nclauses = 0;
 /**
  * Options and flags
  */
-bool    verbose      = false;
-bool    write_output = false;
-string  output_file;
-string  input_file;
-bool gauss = true;
-bool smt_check = false;
+bool        verbose      = false;
+bool        write_output = false;
+string      output_file;
+string      input_file;
+bool        gauss        = true;
+bool        smt_check    = false;
 std::string smt_file;
 
 // -- Functions  ---------------------------------------------------------------
@@ -68,7 +69,8 @@ void print_usage() {
          << "\n\n"
          << "Author: Alexander Weigl <weigl@kit.edu>\n"
          << "        Institute for Theoretical Informatics\n"
-         << "        Karlsruhe Institute of Technology"
+         << "        Karlsruhe Institute of Technology\n"
+         << "Version: " << VERSION
          << endl;
 }
 
@@ -187,184 +189,50 @@ int tseitin_xor(int a, int b, ostream& out) {
     return z;
 }
 
-#include <assert.h>     /* assert */
 
-/*
-void tseitin_xor_2(const vector<int>& xclause, ostream& output){
-    //CNF | (¬x∨¬y)∧(x∨y)
-    assert(xclause.size() == 2);
-    auto a = xclause[0], b = xclause[1];
-    output <<  a << " " <<  b << " 0\n"
-           << -a << " " << -b << " 0\n";
+// -----------------------------------------------------------------------------
+// True xor blasting, suitable for small instances and if equivalence should be
+// maintained
+
+
+// https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
+uint32_t num_of_bits(uint32_t i)
+{
+     i = i - ((i >> 1) & 0x55555555);
+     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
-void tseitin_xor_3(const vector<int>& xclause, ostream& output){
-    //CNF | (¬x∨¬y∨z)∧(¬x∨y∨¬z)∧(x∨¬y∨¬z)∧(x∨y∨z)
-    assert(xclause.size() == 3);
-    auto a = xclause[0], b = xclause[1], c = xclause[2];
+void decode(uint32_t num, const vector<int> xclause, ostream& output) {
+    for(uint32_t i = 0; i < xclause.size();  i++, num>>=1) {
+        if((num&1)>0) {
+            output << abs(xclause.at(i)) << " ";
+        }
+        else {
+            output << "-" << abs(xclause.at(i)) << " ";
+        }
+    }
 
-    output <<  -a << " " <<  -b << " " << c << " 0\n"
-           <<  -a << " " <<  b << " " << -c << " 0\n"
-           <<  a << " " <<  -b << " " << -c << " 0\n"
-           <<  a << " " <<  b << " " << c << " 0\n";
+    output << "0\n";
 }
 
-void tseitin_xor_4(const vector<int>& xclause, ostream& output){
-    //CNF | (¬a∨¬b∨¬c∨¬d)∧(¬a∨¬b∨c∨d)∧(¬a∨b∨¬c∨d)∧(¬a∨b∨c∨¬d)∧(a∨¬b∨¬c∨d)∧(a∨¬b∨c∨¬d)∧(a∨b∨¬c∨¬d)∧(a∨b∨c∨d)
-    assert(xclause.size() == 4);
-    auto a = xclause[0], b = xclause[1], c = xclause[2], d = xclause[3];
 
-    output <<  -a << " " <<  -b << " " << -c << " " << -d << " 0\n"
-           <<  -a << " " <<  -b << " " << c << " " << d << " 0\n"
-           <<  -a << " " <<  b << " " << -c << " " << d << " 0\n"
-           <<  -a << " " <<  b << " " << c << " " << -d << " 0\n"
-           <<  a << " " <<  -b << " " << -c << " " << d << " 0\n"
-           <<  a << " " <<  -b << " " << c << " " << -d << " 0\n"
-           <<  a << " " <<  b << " " << -c << " " << -d << " 0\n"
-           <<  a << " " <<  b << " " << c << " " << d << " 0\n";
+void xorblast(const vector<int>& xclause, ostream& output) {
+    assert(xclause.size() <= 31);
+    uint32_t M = pow(2, xclause.size() );
 
+    // even or odd parity
+    int mode = xclause.at(0) < 0 ? 0 : 1;
+
+    for(uint32_t i = 0; i < M; i++) {
+        if( num_of_bits(i)%2 == mode) {
+            decode(i, xclause, output);
+        }
+    }
 }
+// -----------------------------------------------------------------------------
 
-void tseitin_xor_5(const vector<int>& xclause, ostream& output){
-    //CNF | (¬a∨¬b∨¬c∨¬d∨e)∧(¬a∨¬b∨¬c∨d∨¬e)∧(¬a∨¬b∨c∨¬d∨¬e)∧(¬a∨¬b∨c∨d∨e)∧(¬a∨b∨¬c∨¬d∨¬e)∧(¬a∨b∨¬c∨d∨e)∧(¬a∨b∨c∨¬d∨e)∧(¬a∨b∨c∨d∨¬e)∧(a∨¬b∨¬c∨¬d∨¬e)∧(a∨¬b∨¬c∨d∨e)∧(a∨¬b∨c∨¬d∨e)∧(a∨¬b∨c∨d∨¬e)∧(a∨b∨¬c∨¬d∨e)∧(a∨b∨¬c∨d∨¬e)∧(a∨b∨c∨¬d∨¬e)∧(a∨b∨c∨d∨e)
 
-    assert(xclause.size() == 5);
-    auto a = xclause[0], b = xclause[1], c = xclause[2], d = xclause[3], e = xclause[4];
-
-    output << -a<< " " << -b<< " " << -c<< " " << -d<< " " << e << " 0\n"
-           << -a<< " " << -b<< " " << -c<< " " << d<< " " << -e << " 0\n"
-           << -a<< " " << -b<< " " << c<< " " << -d<< " " << -e << " 0\n"
-           << -a<< " " << -b<< " " << c<< " " << d<< " " << e << " 0\n"
-           << -a<< " " << b<< " " << -c<< " " << -d<< " " << -e << " 0\n"
-           << -a<< " " << b<< " " << -c<< " " << d<< " " << e << " 0\n"
-           << -a<< " " << b<< " " << c<< " " << -d<< " " << e << " 0\n"
-           << -a<< " " << b<< " " << c<< " " << d<< " " << -e << " 0\n"
-           << a<< " " << -b<< " " << -c<< " " << -d<< " " << -e << " 0\n"
-           << a<< " " << -b<< " " << -c<< " " << d<< " " << e << " 0\n"
-           << a<< " " << -b<< " " << c<< " " << -d<< " " << e << " 0\n"
-           << a<< " " << -b<< " " << c<< " " << d<< " " << -e << " 0\n"
-           << a<< " " << b<< " " << -c<< " " << -d<< " " << e << " 0\n"
-           << a<< " " << b<< " " << -c<< " " << d<< " " << -e << " 0\n"
-           << a<< " " << b<< " " << c<< " " << -d<< " " << -e << " 0\n"
-           << a<< " " << b<< " " << c<< " " << d<< " " << e << " 0\n";
-}
-
-void tseitin_xor_6(const vector<int>& xclause, ostream& output){
-    //CNF | (¬a∨¬b∨¬c∨¬d∨¬e∨¬f)∧(¬a∨¬b∨¬c∨¬d∨e∨f)∧(¬a∨¬b∨¬c∨d∨¬e∨f)∧(¬a∨¬b∨¬c∨d∨e∨¬f)∧(¬a∨¬b∨c∨¬d∨¬e∨f)∧(¬a∨¬b∨c∨¬d∨e∨¬f)∧(¬a∨¬b∨c∨d∨¬e∨¬f)∧(¬a∨¬b∨c∨d∨e∨f)∧(¬a∨b∨¬c∨¬d∨¬e∨f)∧(¬a∨b∨¬c∨¬d∨e∨¬f)∧(¬a∨b∨¬c∨d∨¬e∨¬f)∧(¬a∨b∨¬c∨d∨e∨f)∧(¬a∨b∨c∨¬d∨¬e∨¬f)∧(¬a∨b∨c∨¬d∨e∨f)∧(¬a∨b∨c∨d∨¬e∨f)∧(¬a∨b∨c∨d∨e∨¬f)∧(a∨¬b∨¬c∨¬d∨¬e∨f)∧(a∨¬b∨¬c∨¬d∨e∨¬f)∧(a∨¬b∨¬c∨d∨¬e∨¬f)∧(a∨¬b∨¬c∨d∨e∨f)∧(a∨¬b∨c∨¬d∨¬e∨¬f)∧(a∨¬b∨c∨¬d∨e∨f)∧(a∨¬b∨c∨d∨¬e∨f)∧(a∨¬b∨c∨d∨e∨¬f)∧(a∨b∨¬c∨¬d∨¬e∨¬f)∧(a∨b∨¬c∨¬d∨e∨f)∧(a∨b∨¬c∨d∨¬e∨f)∧(a∨b∨¬c∨d∨e∨¬f)∧(a∨b∨c∨¬d∨¬e∨f)∧(a∨b∨c∨¬d∨e∨¬f)∧(a∨b∨c∨d∨¬e∨¬f)∧(a∨b∨c∨d∨e∨f)
-
-    assert(xclause.size() == 5);
-    auto a = xclause[0], b = xclause[1], c = xclause[2], d = xclause[3], e = xclause[4], f = xclause[5];
-    output << -a << " " << -b<< " " << -c << " " << -d<< " " << -e<< " " << -f << " 0\n"
-           << -a << " " << -b << " " << -c << " " << -d << " " << e << " " << f << " 0\n"
-           << -a << " " << -b << " " << -c << " " << d << " " << -e << " " << f << " 0\n"
-           << -a << " " << -b << " " << -c << " " << d << " " << e << " " << -f << " 0\n"
-           << -a << " " << -b << " " << c << " " << -d << " " << -e << " " << f << " 0\n"
-           << -a << " " << -b << " " << c << " " << -d << " " << e << " " << -f << " 0\n"
-           << -a << " " << -b << " " << c << " " << d << " " << -e << " " << -f << " 0\n"
-           << -a << " " << -b << " " << c << " " << d << " " << e << " " << f << " 0\n"
-           << -a << " " << b << " " << -c << " " << -d << " " << -e << " " << f << " 0\n"
-           << -a << " " << b << " " << -c << " " << -d << " " << e << " " << -f << " 0\n"
-           << -a << " " << b << " " << -c << " " << d << " " << -e << " " << -f << " 0\n"
-           << -a << " " << b << " " << -c << " " << d << " " << e << " " << f << " 0\n"
-           << -a << " " << b << " " << c << " " << -d << " " << -e << " " << -f << " 0\n"
-           << -a << " " << b << " " << c << " " << -d << " " << e << " " << f << " 0\n"
-           << -a << " " << b << " " << c << " " << d << " " << -e << " " << f << " 0\n"
-           << -a << " " << b << " " << c << " " << d << " " << e << " " << -f << " 0\n"
-           << a << " " << -b << " " << -c << " " << -d << " " << -e << " " << f << " 0\n"
-           << a << " " << -b << " " << -c << " " << -d << " " << e << " " << -f << " 0\n"
-           << a << " " << -b << " " << -c << " " << d << " " << -e << " " << -f << " 0\n"
-           << a << " " << -b << " " << -c << " " << d << " " << e << " " << f << " 0\n"
-           << a << " " << -b << " " << c << " " << -d << " " << -e << " " << -f << " 0\n"
-           << a << " " << -b << " " << c << " " << -d << " " << e << " " << f << " 0\n"
-           << a << " " << -b << " " << c << " " << d << " " << -e << " " << f << " 0\n"
-           << a << " " << -b << " " << c << " " << d << " " << e << " " << -f << " 0\n"
-           << a << " " << b << " " << -c << " " << -d << " " << -e << " " << -f << " 0\n"
-           << a << " " << b << " " << -c << " " << -d << " " << e << " " << f << " 0\n"
-           << a << " " << b << " " << -c << " " << d << " " << -e << " " << f << " 0\n"
-           << a << " " << b << " " << -c << " " << d << " " << e << " " << -f << " 0\n"
-           << a << " " << b << " " << c << " " << -d << " " << -e << " " << f << " 0\n"
-           << a << " " << b << " " << c << " " << -d << " " << e << " " << -f << " 0\n"
-           << a << " " << b << " " << c << " " << d << " " << -e << " " << -f << " 0\n"
-           << a << " " << b << " " << c << " " << d << " " << e << " " << f << " 0\n";
-}
-
-void tseitin_xor_7(const vector<int>& xclause, ostream& output ) {
-               //CNF | (¬a∨¬b∨¬c∨¬d∨¬e∨¬f∨g)∧(¬a∨¬b∨¬c∨¬d∨¬e∨f∨¬g)∧(¬a∨¬b∨¬c∨¬d∨e∨¬f∨¬g)∧(¬a∨¬b∨¬c∨¬d∨e∨f∨g)∧(¬a∨¬b∨¬c∨d∨¬e∨¬f∨¬g)∧(¬a∨¬b∨¬c∨d∨¬e∨f∨g)∧(¬a∨¬b∨¬c∨d∨e∨¬f∨g)∧(¬a∨¬b∨¬c∨d∨e∨f∨¬g)∧(¬a∨¬b∨c∨¬d∨¬e∨¬f∨¬g)∧(¬a∨¬b∨c∨¬d∨¬e∨f∨g)∧(¬a∨¬b∨c∨¬d∨e∨¬f∨g)∧(¬a∨¬b∨c∨¬d∨e∨f∨¬g)∧(¬a∨¬b∨c∨d∨¬e∨¬f∨g)∧(¬a∨¬b∨c∨d∨¬e∨f∨¬g)∧(¬a∨¬b∨c∨d∨e∨¬f∨¬g)∧(¬a∨¬b∨c∨d∨e∨f∨g)∧(¬a∨b∨¬c∨¬d∨¬e∨¬f∨¬g)∧(¬a∨b∨¬c∨¬d∨¬e∨f∨g)∧(¬a∨b∨¬c∨¬d∨e∨¬f∨g)∧(¬a∨b∨¬c∨¬d∨e∨f∨¬g)∧(¬a∨b∨¬c∨d∨¬e∨¬f∨g)∧(¬a∨b∨¬c∨d∨¬e∨f∨¬g)∧(¬a∨b∨¬c∨d∨e∨¬f∨¬g)∧(¬a∨b∨¬c∨d∨e∨f∨g)∧(¬a∨b∨c∨¬d∨¬e∨¬f∨g)∧(¬a∨b∨c∨¬d∨¬e∨f∨¬g)∧(¬a∨b∨c∨¬d∨e∨¬f∨¬g)∧(¬a∨b∨c∨¬d∨e∨f∨g)∧(¬a∨b∨c∨d∨¬e∨¬f∨¬g)∧(¬a∨b∨c∨d∨¬e∨f∨g)∧(¬a∨b∨c∨d∨e∨¬f∨g)∧(¬a∨b∨c∨d∨e∨f∨¬g)∧(a∨¬b∨¬c∨¬d∨¬e∨¬f∨¬g)∧(a∨¬b∨¬c∨¬d∨¬e∨f∨g)∧(a∨¬b∨¬c∨¬d∨e∨¬f∨g)∧(a∨¬b∨¬c∨¬d∨e∨f∨¬g)∧(a∨¬b∨¬c∨d∨¬e∨¬f∨g)∧(a∨¬b∨¬c∨d∨¬e∨f∨¬g)∧(a∨¬b∨¬c∨d∨e∨¬f∨¬g)∧(a∨¬b∨¬c∨d∨e∨f∨g)∧(a∨¬b∨c∨¬d∨¬e∨¬f∨g)∧(a∨¬b∨c∨¬d∨¬e∨f∨¬g)∧(a∨¬b∨c∨¬d∨e∨¬f∨¬g)∧(a∨¬b∨c∨¬d∨e∨f∨g)∧(a∨¬b∨c∨d∨¬e∨¬f∨¬g)∧(a∨¬b∨c∨d∨¬e∨f∨g)∧(a∨¬b∨c∨d∨e∨¬f∨g)∧(a∨¬b∨c∨d∨e∨f∨¬g)∧(a∨b∨¬c∨¬d∨¬e∨¬f∨g)∧(a∨b∨¬c∨¬d∨¬e∨f∨¬g)∧(a∨b∨¬c∨¬d∨e∨¬f∨¬g)∧(a∨b∨¬c∨¬d∨e∨f∨g)∧(a∨b∨¬c∨d∨¬e∨¬f∨¬g)∧(a∨b∨¬c∨d∨¬e∨f∨g)∧(a∨b∨¬c∨d∨e∨¬f∨g)∧(a∨b∨¬c∨d∨e∨f∨¬g)∧(a∨b∨c∨¬d∨¬e∨¬f∨¬g)∧(a∨b∨c∨¬d∨¬e∨f∨g)∧(a∨b∨c∨¬d∨e∨¬f∨g)∧(a∨b∨c∨¬d∨e∨f∨¬g)∧(a∨b∨c∨d∨¬e∨¬f∨g)∧(a∨b∨c∨d∨¬e∨f∨¬g)∧(a∨b∨c∨d∨e∨¬f∨¬g)∧(a∨b∨c∨d∨e∨f∨g)
-
-               assert(xclause.size() == 5);
-               auto a = xclause[0], b = xclause[1], c = xclause[2],
-                   d = xclause[3], e = xclause[4], f = xclause[5],
-                   g = xclause[6];
-               output <<  -a << " " << -b << " " << -c << " " << -d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << -d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << -d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << -d << " " << e << " " << f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << d << " " << -e << " " << f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << d << " " << e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << -c << " " << d << " " << e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << -d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << -d << " " << -e << " " << f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << -d << " " << e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << -d << " " << e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << -b << " " << c << " " << d << " " << e << " " << f << " " << g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << -d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << -d << " " << -e << " " << f << " " << g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << -d << " " << e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << -d << " " << e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << -c << " " << d << " " << e << " " << f << " " << g << " 0\n"
-                      << -a << " " << b << " " << c << " " << -d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << b << " " << c << " " << -d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << c << " " << -d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << c << " " << -d << " " << e << " " << f << " " << g << " 0\n"
-                      << -a << " " << b << " " << c << " " << d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << -a << " " << b << " " << c << " " << d << " " << -e << " " << f << " " << g << " 0\n"
-                      << -a << " " << b << " " << c << " " << d << " " << e << " " << -f << " " << g << " 0\n"
-                      << -a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << -d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << -d << " " << -e << " " << f << " " << g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << -d << " " << e << " " << -f << " " << g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << -d << " " << e << " " << f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << -c << " " << d << " " << e << " " << f << " " << g << " 0\n"
-                      << a << " " << -b << " " << c << " " << -d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << a << " " << -b << " " << c << " " << -d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << c << " " << -d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << c << " " << -d << " " << e << " " << f << " " << g << " 0\n"
-                      << a << " " << -b << " " << c << " " << d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << -b << " " << c << " " << d << " " << -e << " " << f << " " << g << " 0\n"
-                      << a << " " << -b << " " << c << " " << d << " " << e << " " << -f << " " << g << " 0\n"
-                      << a << " " << -b << " " << c << " " << d << " " << e << " " << f << " " << -g << " 0\n"
-                      << a << " " << b << " " << -c << " " << -d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << a << " " << b << " " << -c << " " << -d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << a << " " << b << " " << -c << " " << -d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << b << " " << -c << " " << -d << " " << e << " " << f << " " << g << " 0\n"
-                      << a << " " << b << " " << -c << " " << d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << b << " " << -c << " " << d << " " << -e << " " << f << " " << g << " 0\n"
-                      << a << " " << b << " " << -c << " " << d << " " << e << " " << -f << " " << g << " 0\n"
-                      << a << " " << b << " " << -c << " " << d << " " << e << " " << f << " " << -g << " 0\n"
-                      << a << " " << b << " " << c << " " << -d << " " << -e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << b << " " << c << " " << -d << " " << -e << " " << f << " " << g << " 0\n"
-                      << a << " " << b << " " << c << " " << -d << " " << e << " " << -f << " " << g << " 0\n"
-                      << a << " " << b << " " << c << " " << -d << " " << e << " " << f << " " << -g << " 0\n"
-                      << a << " " << b << " " << c << " " << d << " " << -e << " " << -f << " " << g << " 0\n"
-                      << a << " " << b << " " << c << " " << d << " " << -e << " " << f << " " << -g << " 0\n"
-                      << a << " " << b << " " << c << " " << d << " " << e << " " << -f << " " << -g << " 0\n"
-                      << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " 0\n";
-              }
-*/
-
-//
-//
-void test() {}
 void tseitin_xor(const vector<int>& xclause,
                  ostream& output) {
 
